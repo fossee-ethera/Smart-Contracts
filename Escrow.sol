@@ -37,14 +37,30 @@ contract Escrow
         mark[i].state=State.Process;
     }
     
-    function Validate(uint j, string memory _sign) public {
-        require(mark[j].request_number==j,'request_number not same.');
-        require(mark[j].state==State.Process,'State is not same');
-        require(mark[j].validator==msg.sender,'You are not authorized.');
+    function Validate(uint j, string memory _sign) public validator(j) {
         token.approve1(address(this),msg.sender,10);
         mark[j].sign=_sign;
         token.transferFrom1(address(this),msg.sender,10);
         emit Success(mark[j].validator,mark[j].sign);
         mark[j].state=State.Validated;
+    }
+    
+    function reject(uint j) public validator(j){
+        token.approve1(address(this),msg.sender,5);
+        token.approve1(address(this),mark[j].candidate,5);
+        token.transferFrom1(address(this),msg.sender,5);
+        token.transferFrom1(address(this),mark[j].candidate,5);
+        mark[j].state=State.Validated;
+    }
+    
+    modifier validator(uint j){
+        require(mark[j].request_number==j,'request_number not same.');
+        require(mark[j].state==State.Process,'State is not same');
+        require(mark[j].validator==msg.sender,'You are not authorized.');
+        _;
+    }
+    
+    function getSign(uint j) public view returns (string memory) {
+        return mark[j].sign;
     }
 }
